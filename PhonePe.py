@@ -1,21 +1,11 @@
 import os
 import json
 import pandas as pd
-import geopandas as gpd
 import psycopg2
 import streamlit as st
 import plotly.express as px
 from streamlit_option_menu import option_menu
 from PIL import Image
-
-## replacing the state_names
-def change_state_names(x):
-    x['State'] = x['State'].str.title()
-    x['State'] = x['State'].str.replace("-"," ")
-    x['State'] = x['State'].str.replace("Dadra & Nagar Haveli & Daman & Diu","Dadra and Nagar Haveli and Daman and Diu")
-    x['State'] = x['State'].str.replace("Jammu & Kashmir","Jammu and Kashmir")
-    x['State'] = x['State'].str.replace("Andaman & Nicobar Islands","Andaman and Nicobar Islands")
-    #print(x['State'].unique())
 
 #aggre_trans
 path1 = "D:/New folder/Phonepe/Pulse/data/aggregated/transaction/country/india/state/"
@@ -43,7 +33,7 @@ for state in agg_trans_list:
                 Transaction_details["State"].append(state)
                 Transaction_details["Year"].append(year)
             aggre_transaction = pd.DataFrame(Transaction_details, columns = ("State", "Year","Quarter","Transaction_name","Transaction_count","Transaction_amount"))
-            change_state_names(aggre_transaction)
+            #change_state_names(aggre_transaction)
             #print(aggre_transaction.head())
             
 ### aggre_users
@@ -73,7 +63,7 @@ for state in agg_users_list:
                     aggregation_users["State"].append(state)
                     aggregation_users["Year"].append(year)
                 aggre_users = pd.DataFrame(aggregation_users, columns = ("State", "Year","Quarter","Count","Percentage","Brand"))
-                change_state_names(aggre_users)
+                #change_state_names(aggre_users)
             except:
                pass
 
@@ -105,7 +95,7 @@ for state in map_trans:
                 map_details["Quarter"].append(int(file.strip(".json")))
             map_data = pd.DataFrame(map_details, columns = ("State", "Year","Quarter","Transaction_amount","Transaction_count","District"))
             map_data['District'] = map_data['District'].str.title()
-            change_state_names(map_data)
+            #change_state_names(map_data)
             
 ### map_users
 path4 ="D:/New folder/Phonepe/Pulse/data/map/user/hover/country/india/state/"
@@ -133,7 +123,7 @@ for state in map_users:
                 map_details_2["Quarter"].append(int(file.strip(".json")))
             map_data_2 = pd.DataFrame(map_details_2, columns = ("State", "Year","Quarter","App_openers","Users","District"))
             map_data_2['District'] = map_data_2['District'].str.title()
-            change_state_names(map_data_2)
+            #change_state_names(map_data_2)
             #print(map_data_2.head())
 ###top_transaction
 path5 = "D:/New folder/Phonepe/Pulse/data/top/transaction/country/india/state/"
@@ -160,7 +150,7 @@ for state in top_trans:
                 top_details["Year"].append(year)
                 top_details["Quarter"].append(int(file.strip(".json")))
             top_data = pd.DataFrame(top_details, columns = ("State", "Year","Quarter","Pincodes","Transaction_count","Transaction_amount"))
-            change_state_names(top_data)
+            #change_state_names(top_data)
              
 ## top_users
 path6 = "D:/New folder/Phonepe/Pulse/data/top/user/country/india/state/"
@@ -186,8 +176,17 @@ for state in top_users:
                 top_details_2["Year"].append(year)
                 top_details_2["Quarter"].append(int(file.strip(".json")))
             top_data_1 = pd.DataFrame(top_details_2, columns = ("State", "Year","Quarter","RegisteredUsers","Pincodes"))        
-            #change_state_names(top_data_1)
+            ##change_state_names(top_data_1)
             #print(top_data_1.head())
+            
+## replacing the state_names
+def change_state_names(x):
+    x['State'] = x['State'].str.title()
+    x['State'] = x['State'].str.replace("-"," ")
+    x['State'] = x['State'].str.replace("Dadra & Nagar Haveli & Daman & Diu","Dadra and Nagar Haveli and Daman and Diu")
+    x['State'] = x['State'].str.replace("Jammu & Kashmir","Jammu and Kashmir")
+    x['State'] = x['State'].str.replace("Andaman & Nicobar Islands","Andaman and Nicobar Islands")
+    #print(x['State'].unique())
 
 ## connection to sql Database
 database = psycopg2.connect(host = "localhost",
@@ -278,8 +277,8 @@ cursor.execute(drop_query_5)
 create_query_5 = '''create table if not exists top_transactions(State varchar(90),
                                                                 Year int,
                                                                 Quarter int,
-                                                                Pincodes varchar(80),
-                                                                Transaction_count varchar(50),
+                                                                Pincodes bigint,
+                                                                Transaction_count bigint,
                                                                 Transaction_amount float)'''
 cursor.execute(create_query_5)
 database.commit()
@@ -337,26 +336,26 @@ if selected == "HOME":
 if selected == "TOP CHARTS":
     st.markdown("## :violet[TOP CHARTS]")
     with st.sidebar:
-        Type = option_menu("**Type**", ["Transactions", "Users"],styles= {"nav-link-selected": {"background-color": "#6F36AD"}})
-    colum1,colum2= st.columns([1,1.5],gap="large")
-    with colum1:
+        Type = st.sidebar.selectbox("**Type**", ("Transactions", "Users"))
+        col1, col2= st.columns(2)
+    with col1:
         Year = st.slider("**Year**", min_value=2018, max_value=2022)
         Quarter = st.slider("Quarter", min_value=1, max_value=4)
     
-    with colum2:
-        st.info(
-                """
-                #### From this menu we can get insights like :
-                - Overall ranking on a particular Year and Quarter.
-                - Top 10 State, District, Pincode based on Total number of transaction and Total amount spent on phonepe.
-                - Top 10 State, District, Pincode based on Total phonepe users and their app opening frequency.
-                - Top 10 mobile brands and its percentage based on the how many people use phonepe.
-                """,icon="🔍"
-                )
+    with col2:
+         st.info(
+                 """
+                 #### From this menu we can get insights like :
+                 - Overall ranking on a particular Year and Quarter.
+                 - Top 10 State, District, Pincode based on Total number of transaction and Total amount spent on phonepe.
+                 - Top 10 State, District, Pincode based on Total phonepe users and their app opening frequency.
+                 - Top 10 mobile brands and its percentage based on the how many people use phonepe.
+                 """,icon="🔍"
+                 )
         
 # Top Charts - TRANSACTIONS    
     if Type == "Transactions":
-        col1,col2 = st.columns([1,1], gap="medium")
+        col1,col2,col3= st.columns([1,1,1], gap="medium")
         
         with col1:
             st.markdown("### :violet[State]")
@@ -386,7 +385,20 @@ if selected == "TOP CHARTS":
 
             fig.update_traces(textposition='inside', textinfo='percent+label')
             st.plotly_chart(fig,use_container_width=True)
-        
+        with col3:
+            st.markdown("### :violet[Pincodes]")
+            cursor.execute(f"select Pincodes, sum(Transaction_count) as Total_Count, sum(Transaction_amount) as Total_Amount from top_transactions where year = {Year} and quarter = {Quarter} group by Pincodes order by Total_Amount desc limit 10")
+            df = pd.DataFrame(cursor.fetchall(), columns=['Pincodes','Transaction_Count' 'Total_Amount'])
+            fig = px.pie(df,
+                         values='Total_Amount',
+                         names='Pincodes',
+                         title='Top 10',
+                         color_discrete_sequence=px.colors.sequential.Agsunset,
+                         hover_data=['Transaction_Count'],
+                         labels = {'Transactions_count:Transaction_count'})   
+            fig.update_traces(textposition='inside', textinfo='percent+label')
+            st.plotly_chart(fig,use_container_width=True)
+            
 # Top Charts - USERS          
     if Type == "Users":
         col1,col2,col3,col4 = st.columns([2,2,2,2],gap="small")
